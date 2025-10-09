@@ -1,14 +1,12 @@
 #!/usr/bin/env python3
 import time, json, requests
-from typing import List
-from fastapi import FastAPI, Query, Body
-from fastapi.staticfiles import StaticFiles
-from fastapi.responses import RedirectResponse
+from typing import List, Dict
+from fastapi import FastAPI, HTTPException, Query, Body
 from pydantic import BaseModel, AnyHttpUrl
+from fastapi.staticfiles import StaticFiles
 
 app = FastAPI(title="Solana RPC Debug API", version="0.1.0")
 
-# ---- JSON-RPC helper --------------------------------------------------------
 def rpc_request(url: str, method: str, params: list = []):
     headers = {"Content-Type": "application/json"}
     payload = {"jsonrpc": "2.0", "id": 1, "method": method, "params": params}
@@ -24,10 +22,9 @@ def rpc_request(url: str, method: str, params: list = []):
         "error": body.get("error"),
     }
 
-# ---- /api/probe --------------------------------------------------------------
 class ProbeResult(BaseModel):
     url: str
-    checks: List[dict]
+    checks: List[Dict]
 
 @app.get("/api/probe", response_model=ProbeResult)
 def probe(url: AnyHttpUrl = Query(..., description="Solana RPC endpoint")):
@@ -41,11 +38,11 @@ def probe(url: AnyHttpUrl = Query(..., description="Solana RPC endpoint")):
             checks.append({"ok": False, "method": m, "error": str(e)})
     return {"url": str(url), "checks": checks}
 
-# ---- Host metrics ingest (sehr simpel, nur RAM) ------------------------------
-HOST_METRICS = []
+# --- very simple in-memory host metrics buffer ---
+HOST_METRICS: List[Dict] = []
 
 @app.post("/api/ingest/host")
-def ingest_host(data: dict = Body(...)):
+def ingest_host(data: Dict = Body(...)):
     HOST_METRICS.append(data)
     if len(HOST_METRICS) > 100:
         HOST_METRICS.pop(0)
@@ -55,10 +52,5 @@ def ingest_host(data: dict = Body(...)):
 def last_host():
     return HOST_METRICS[-1] if HOST_METRICS else {}
 
-# ---- Static: / → static_index.html ------------------------------------------
+# Serve the static UI (static_index.html at /)
 app.mount("/", StaticFiles(directory=".", html=True), name="static")
-
-# Falls du explizit eine Weiterleitung willst:
-@app.get("/")
-def root():
-    return RedirectResponse("/static_index.html")
