@@ -2,37 +2,71 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Solana RPC Debug</title>
 <style>
-body{font-family:system-ui,Arial;margin:20px;max-width:900px}
+body{font-family:system-ui,Arial;margin:20px;max-width:980px}
 pre{background:#111;color:#eee;padding:12px;border-radius:8px;overflow:auto}
 label,input,button{font-size:16px}
 input{width:100%;padding:8px;margin:6px 0 12px;border:1px solid #ccc;border-radius:6px}
 button{padding:8px 12px;border-radius:6px;border:1px solid #333;background:#222;color:#fff;cursor:pointer}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .card{border:1px solid #e2e2e2;border-radius:10px;padding:12px;margin:12px 0}
 .ok{color:#138a36}.fail{color:#b00020}
+small{color:#666}
 </style>
 </head><body>
 <h1>Solana RPC Debug</h1>
-<p>Teste Health/Latency eines RPC-Endpunkts.</p>
+<p>Teste Health/Latency eines RPC-Endpunkts. <small>UI-Proto</small></p>
 <label>RPC URL</label>
 <input id="url" value="https://api.testnet.solana.com" />
-<button onclick="probe()">Probe</button>
+<div class="grid">
+  <button onclick="probe()">Probe (basic)</button>
+  <button onclick="probeDeep()">Probe (deep)</button>
+</div>
+<canvas id="latChart" width="960" height="220"></canvas>
 <div id="out"></div>
 <script>
+let hist=[];
+function renderChart(){
+  const c=document.getElementById('latChart'); const ctx=c.getContext('2d');
+  ctx.clearRect(0,0,c.width,c.height);
+  if(hist.length===0) return;
+  const max=Math.max(...hist.map(x=>x.lat));
+  const stepX=c.width/(hist.length-1 || 1);
+  ctx.beginPath();
+  hist.forEach((p,i)=>{
+    const x=i*stepX;
+    const y=c.height - (p.lat/(max||1)) * (c.height-20) - 10;
+    if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+  });
+  ctx.stroke();
+}
 async function probe(){
   const url = document.getElementById('url').value.trim();
   const res = await fetch('/api/probe?url='+encodeURIComponent(url));
   const data = await res.json();
+  show(data);
+}
+async function probeDeep(){
+  const url = document.getElementById('url').value.trim();
+  const res = await fetch('/api/probe/deep?url='+encodeURIComponent(url));
+  const data = await res.json();
+  show(data);
+}
+function show(data){
   const out = document.getElementById('out');
   out.innerHTML = '';
   const wrap = document.createElement('div'); wrap.className='card';
   wrap.innerHTML = `<b>Endpoint:</b> ${data.url}`;
-  data.checks.forEach(c=>{
+  (data.checks||[]).forEach(c=>{
+    if(typeof c.latency_ms==='number'){
+      hist.push({t:Date.now(),lat:c.latency_ms});
+      if(hist.length>120) hist.shift();
+    }
     const li = document.createElement('div');
     li.innerHTML = `<div><b class="${c.ok?'ok':'fail'}">${c.ok?'OK':'FAIL'}</b> ${c.method} — ${('latency_ms' in c? c.latency_ms+' ms':'')}</div>`;
     wrap.appendChild(li);
   });
   const pre = document.createElement('pre'); pre.textContent = JSON.stringify(data,null,2);
-  out.appendChild(wrap); out.appendChild(pre);
+  out.appendChild(wrap); out.appendChild(pre); renderChart();
 }
 </script>
 </body></html>
