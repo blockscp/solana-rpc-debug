@@ -1,1 +1,4 @@
-requests>=2.25
+fastapi
+uvicorn[standard]
+requests
+pydantic

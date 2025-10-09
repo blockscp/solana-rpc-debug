@@ -1,0 +1,38 @@
+<!doctype html><html><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Solana RPC Debug</title>
+<style>
+body{font-family:system-ui,Arial;margin:20px;max-width:900px}
+pre{background:#111;color:#eee;padding:12px;border-radius:8px;overflow:auto}
+label,input,button{font-size:16px}
+input{width:100%;padding:8px;margin:6px 0 12px;border:1px solid #ccc;border-radius:6px}
+button{padding:8px 12px;border-radius:6px;border:1px solid #333;background:#222;color:#fff;cursor:pointer}
+.card{border:1px solid #e2e2e2;border-radius:10px;padding:12px;margin:12px 0}
+.ok{color:#138a36}.fail{color:#b00020}
+</style>
+</head><body>
+<h1>Solana RPC Debug</h1>
+<p>Teste Health/Latency eines RPC-Endpunkts.</p>
+<label>RPC URL</label>
+<input id="url" value="https://api.testnet.solana.com" />
+<button onclick="probe()">Probe</button>
+<div id="out"></div>
+<script>
+async function probe(){
+  const url = document.getElementById('url').value.trim();
+  const res = await fetch('/api/probe?url='+encodeURIComponent(url));
+  const data = await res.json();
+  const out = document.getElementById('out');
+  out.innerHTML = '';
+  const wrap = document.createElement('div'); wrap.className='card';
+  wrap.innerHTML = `<b>Endpoint:</b> ${data.url}`;
+  data.checks.forEach(c=>{
+    const li = document.createElement('div');
+    li.innerHTML = `<div><b class="${c.ok?'ok':'fail'}">${c.ok?'OK':'FAIL'}</b> ${c.method} — ${('latency_ms' in c? c.latency_ms+' ms':'')}</div>`;
+    wrap.appendChild(li);
+  });
+  const pre = document.createElement('pre'); pre.textContent = JSON.stringify(data,null,2);
+  out.appendChild(wrap); out.appendChild(pre);
+}
+</script>
+</body></html>
