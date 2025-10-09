@@ -1,10 +1,14 @@
 #!/usr/bin/env python3
 import time, json, requests
-from fastapi import FastAPI, HTTPException, Query
+from typing import List
+from fastapi import FastAPI, Query, Body
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import RedirectResponse
 from pydantic import BaseModel, AnyHttpUrl
-from typing import List, Optional
+
 app = FastAPI(title="Solana RPC Debug API", version="0.1.0")
 
+# ---- JSON-RPC helper --------------------------------------------------------
 def rpc_request(url: str, method: str, params: list = []):
     headers = {"Content-Type": "application/json"}
     payload = {"jsonrpc": "2.0", "id": 1, "method": method, "params": params}
@@ -13,8 +17,14 @@ def rpc_request(url: str, method: str, params: list = []):
     latency = round((time.time() - t0) * 1000, 2)
     r.raise_for_status()
     body = r.json()
-    return {"method": method, "latency_ms": latency, "result": body.get("result"), "error": body.get("error")}
+    return {
+        "method": method,
+        "latency_ms": latency,
+        "result": body.get("result"),
+        "error": body.get("error"),
+    }
 
+# ---- /api/probe --------------------------------------------------------------
 class ProbeResult(BaseModel):
     url: str
     checks: List[dict]
@@ -30,3 +40,25 @@ def probe(url: AnyHttpUrl = Query(..., description="Solana RPC endpoint")):
         except Exception as e:
             checks.append({"ok": False, "method": m, "error": str(e)})
     return {"url": str(url), "checks": checks}
+
+# ---- Host metrics ingest (sehr simpel, nur RAM) ------------------------------
+HOST_METRICS = []
+
+@app.post("/api/ingest/host")
+def ingest_host(data: dict = Body(...)):
+    HOST_METRICS.append(data)
+    if len(HOST_METRICS) > 100:
+        HOST_METRICS.pop(0)
+    return {"ok": True}
+
+@app.get("/api/host/last")
+def last_host():
+    return HOST_METRICS[-1] if HOST_METRICS else {}
+
+# ---- Static: / → static_index.html ------------------------------------------
+app.mount("/", StaticFiles(directory=".", html=True), name="static")
+
+# Falls du explizit eine Weiterleitung willst:
+@app.get("/")
+def root():
+    return RedirectResponse("/static_index.html")
