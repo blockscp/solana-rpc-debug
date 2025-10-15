@@ -5,7 +5,7 @@ It enables **validators**, **wallet developers**, and **infrastructure providers
 
 ---
 
-## 🔍 Features
+## Features
 
 - **RPC Probe Dashboard:** Live latency and response-code analysis for any Solana RPC endpoint.  
 - **Trace Explorer:** Inspect transaction traces, logs, and balance diffs in a clean UI.  
