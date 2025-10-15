@@ -1,7 +1,7 @@
 # BlockScope — Solana RPC Debug & Monitoring Suite
 
 **BlockScope** is an open-source debugging and analytics toolkit for the Solana blockchain.  
-It enables **validators**, **wallet developers**, and **infrastructure providers** to analyze RPC latency, network health, and validator performance — all in one place.
+It enables **validators**, **wallet developers**, and **infrastructure providers** to analyze RPC latency, network health, and validator performance — all ihttps://github.com/fabianbrg/solana-rpc-debug/blob/main/README.mdn one place.
 
 ---
 
