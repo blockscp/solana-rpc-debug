@@ -27,5 +27,4 @@ Unlike typical explorers or dashboards, BlockScope runs entirely self-hosted, gi
 | **HTML / JS / Tailwind** | Lightweight static UI for visualization |
 | **Shell scripts** | Easy deployment and automation |
 | **GeoIP + ASN lookup** | Infrastructure analysis and mapping |
-bash run_api.sh
 
