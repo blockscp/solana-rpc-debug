@@ -27,14 +27,5 @@ Unlike typical explorers or dashboards, BlockScope runs **entirely self-hosted**
 | **HTML / JS / Tailwind** | Lightweight static UI for visualization |
 | **Shell scripts** | Easy deployment and automation |
 | **GeoIP + ASN lookup** | Infrastructure analysis and mapping |
-
----
-
-##  Getting Started
-
-```bash
-git clone https://github.com/fabianbrg/solana-rpc-debug.git
-cd solana-rpc-debug
-pip install -r requirements.txt
 bash run_api.sh
 
